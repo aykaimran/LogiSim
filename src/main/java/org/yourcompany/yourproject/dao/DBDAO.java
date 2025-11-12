@@ -1,411 +1,228 @@
+package org.yourcompany.yourproject.dao;
 
-// package org.yourcompany.yourproject.dao;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Hashtable;
 
-// import java.sql.Connection;
-// import java.sql.PreparedStatement;
-// import java.sql.ResultSet;
-// import java.sql.SQLException;
-// import java.sql.Statement;
-// import java.sql.Timestamp;
-// import java.util.ArrayList;
-// import java.util.HashMap;
-// import java.util.Hashtable;
-// import java.util.Map;
+import org.yourcompany.yourproject.util.DatabaseUtil;
 
-// import javax.swing.JOptionPane;
+/**
+ * DBDAO handles all database operations related to projects, circuits, gates, pins, and connections.
+ * It implements the IDAO interface for general operations, but also provides
+ * specialized methods for each entity.
+ */
+public class DBDAO implements IDAO {
 
-// public class DBDAO implements IDAO {
-//     private static final Map<Integer, Integer> taskIdMap = new HashMap<>();
+    // ====== GENERIC METHODS (From IDAO Interface) ======
 
-//     @Override
-//     public boolean save(Hashtable<String, String> data) {
-//         String type = data.get("type");
+    @Override
+    public boolean save(Hashtable<String, String> data) {
+        // Generic save (you can customize this for specific entities)
+        String table = data.get("table");
+        if (table == null) return false;
 
-//         try (Connection conn = DatabaseUtil.getConnection()) {
-//             switch (type) {
-//                 case "project": {
-//                     String sql = "INSERT INTO project (name) VALUES (?) RETURNING project_id";
-//                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-//                         stmt.setString(1, data.get("name"));
-//                         ResultSet rs = stmt.executeQuery();
-//                         if (rs.next()) {
-//                             int id = rs.getInt("project_id");
-//                             data.put("project_id", String.valueOf(id));
-//                         }
-//                     }
-//                     break;
-//                 }
-//                 case "task": {
-//                     String sql = """
-//                                 INSERT INTO task (project_id, title, start_time, end_time) VALUES (?, ?, ?, ?)
-//                                 RETURNING task_id
-//                             """;
-//                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-//                         stmt.setInt(1, Integer.parseInt(data.get("project_id")));
-//                         stmt.setString(2, data.get("title"));
+        switch (table) {
+            case "projects":
+                return saveProject(data);
+            case "circuits":
+                return saveCircuit(data);
+            case "gates":
+                return saveGate(data);
+            default:
+                return false;
+        }
+    }
 
-//                         String startStr = data.get("start").trim().replace("T", " ");
-//                         String endStr = data.get("end").trim().replace("T", " ");
+    @Override
+    public boolean delete(String id) {
+        // You may want to delete by project_id or circuit_id
+        String[] parts = id.split(":"); // e.g. "projects:3"
+        if (parts.length != 2) return false;
+        String table = parts[0];
+        int recordId = Integer.parseInt(parts[1]);
 
-//                         // add seconds if missing
-//                         if (startStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}$")) {
-//                             startStr += ":00";
-//                         }
-//                         if (endStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}$")) {
-//                             endStr += ":00";
-//                         }
+        String sql = "DELETE FROM " + table + " WHERE " + table.substring(0, table.length() - 1) + "_id = ?";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, recordId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
-//                         stmt.setTimestamp(3, Timestamp.valueOf(startStr));
-//                         stmt.setTimestamp(4, Timestamp.valueOf(endStr));
+    @Override
+    public Hashtable<String, String> load(String id) {
+        String[] parts = id.split(":"); // e.g. "projects:3"
+        if (parts.length != 2) return null;
+        String table = parts[0];
+        int recordId = Integer.parseInt(parts[1]);
 
-//                         ResultSet rs = stmt.executeQuery();
-//                         if (rs.next()) {
-//                             int dbTaskId = rs.getInt("task_id");
-//                             int localId = Integer.parseInt(data.get("id"));
-//                             taskIdMap.put(localId, dbTaskId);
-//                         }
-//                     }
-//                     break;
-//                 }
+        String sql = "SELECT * FROM " + table + " WHERE " + table.substring(0, table.length() - 1) + "_id = ?";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, recordId);
+            ResultSet rs = stmt.executeQuery();
 
-//                 case "resource": {
-//                     String sql = "INSERT INTO resource (project_id, name) VALUES (?, ?) ON CONFLICT DO NOTHING";
-//                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-//                         stmt.setInt(1, Integer.parseInt(data.get("project_id")));
-//                         stmt.setString(2, data.get("name"));
-//                         stmt.executeUpdate();
-//                     }
-//                     break;
-//                 }
+            ResultSetMetaData meta = rs.getMetaData();
+            Hashtable<String, String> record = new Hashtable<>();
 
-//                 case "allocation": {
-//                     int localTaskId = Integer.parseInt(data.get("task_id"));
-//                     Integer dbTaskId = taskIdMap.get(localTaskId);
-//                     if (dbTaskId == null) {
-//                         System.err.println("skipping allocation: No DB task found for local task_id=" + localTaskId);
-//                         return false;
-//                     }
+            if (rs.next()) {
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    record.put(meta.getColumnName(i), rs.getString(i));
+                }
+            }
+            return record;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-//                     String sql = """
-//                                 INSERT INTO allocation (task_id, resource_name, percentage) VALUES (?, ?, ?)
-//                                 ON CONFLICT DO NOTHING
-//                             """;
-//                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-//                         stmt.setInt(1, dbTaskId);
-//                         stmt.setString(2, data.get("resource_name"));
-//                         stmt.setInt(3, Integer.parseInt(data.get("percentage")));
-//                         stmt.executeUpdate();
-//                     }
-//                     break;
-//                 }
-//                 case "task_dependency": {
-//                     int localTaskId = Integer.parseInt(data.get("task_id"));
-//                     int localDepId = Integer.parseInt(data.get("depends_on_id"));
+    @Override
+    public ArrayList<Hashtable<String, String>> load() {
+        // Loads all projects by default
+        return loadAll("projects");
+    }
 
-//                     Integer dbTaskId = taskIdMap.get(localTaskId);
-//                     Integer dbDepId = taskIdMap.get(localDepId);
+    // ====== HELPER: Load all from any table ======
 
-//                     if (dbTaskId == null || dbDepId == null) {
-//                         System.err.println("skipping dependency: no DB task mapping found for " + localTaskId + " → "
-//                                 + localDepId);
-//                         return false;
-//                     }
+    public ArrayList<Hashtable<String, String>> loadAll(String table) {
+        ArrayList<Hashtable<String, String>> records = new ArrayList<>();
+        String sql = "SELECT * FROM " + table;
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
 
-//                     String sql = """
-//                                 INSERT INTO task_dependency (task_id, depends_on_id) VALUES (?, ?)
-//                                 ON CONFLICT DO NOTHING
-//                             """;
-//                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-//                         stmt.setInt(1, dbTaskId);
-//                         stmt.setInt(2, dbDepId);
-//                         stmt.executeUpdate();
-//                     }
-//                     break;
-//                 }
+            ResultSetMetaData meta = rs.getMetaData();
+            while (rs.next()) {
+                Hashtable<String, String> row = new Hashtable<>();
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    row.put(meta.getColumnName(i), rs.getString(i));
+                }
+                records.add(row);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return records;
+    }
 
-//                 default:
-//                     throw new IllegalArgumentException("Unknown save type: " + type);
-//             }
+    // ====== PROJECT-SPECIFIC METHODS ======
 
-//             return true;
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//             return false;
-//         }
-//     }
+    public boolean saveProject(Hashtable<String, String> data) {
+        String sql = "INSERT INTO projects (name, description) VALUES (?, ?)";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, data.get("name"));
+            stmt.setString(2, data.getOrDefault("description", ""));
+            stmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
-//     @Override
-//     public boolean delete(String id) {
-//         String sql = "DELETE FROM task WHERE task_id = ?";
-//         try (Connection conn = DatabaseUtil.getConnection();
-//                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-//             stmt.setInt(1, Integer.parseInt(id));
-//             stmt.executeUpdate();
-//             return true;
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//             return false;
-//         }
-//     }
+    public ArrayList<Hashtable<String, String>> loadAllProjects() {
+        return loadAll("projects");
+    }
 
-//     @Override
-//     public Hashtable<String, String> load(String id) {
-//         Hashtable<String, String> record = new Hashtable<>();
-//         String sql = "SELECT * FROM task WHERE task_id = ?";
-//         try (Connection conn = DatabaseUtil.getConnection();
-//                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-//             stmt.setInt(1, Integer.parseInt(id));
-//             ResultSet rs = stmt.executeQuery();
-//             if (rs.next()) {
-//                 record.put("id", String.valueOf(rs.getInt("task_id")));
-//                 record.put("title", rs.getString("title"));
-//                 record.put("start", rs.getTimestamp("start_time").toString());
-//                 record.put("end", rs.getTimestamp("end_time").toString());
-//             }
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//         }
-//         return record;
-//     }
+    // ====== CIRCUIT-SPECIFIC METHODS ======
 
-//     @Override
-//     public ArrayList<Hashtable<String, String>> load() {
-//         ArrayList<Hashtable<String, String>> records = new ArrayList<>();
-//         String sql = "SELECT * FROM task ORDER BY task_id";
-//         try (Connection conn = DatabaseUtil.getConnection();
-//                 Statement stmt = conn.createStatement();
-//                 ResultSet rs = stmt.executeQuery(sql)) {
+    public boolean saveCircuit(Hashtable<String, String> data) {
+        String sql = "INSERT INTO circuits (project_id, parent_circuit_id, name) VALUES (?, ?, ?)";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, Integer.parseInt(data.get("project_id")));
+            if (data.get("parent_circuit_id") != null)
+                stmt.setInt(2, Integer.parseInt(data.get("parent_circuit_id")));
+            else
+                stmt.setNull(2, Types.INTEGER);
+            stmt.setString(3, data.get("name"));
+            stmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
-//             while (rs.next()) {
-//                 Hashtable<String, String> record = new Hashtable<>();
-//                 record.put("id", String.valueOf(rs.getInt("task_id")));
-//                 record.put("title", rs.getString("title"));
-//                 record.put("start", rs.getTimestamp("start_time").toString());
-//                 record.put("end", rs.getTimestamp("end_time").toString());
-//                 records.add(record);
-//             }
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//         }
-//         return records;
-//     }
+    public ArrayList<Hashtable<String, String>> loadCircuitsByProject(int projectId) {
+        ArrayList<Hashtable<String, String>> circuits = new ArrayList<>();
+        String sql = "SELECT * FROM circuits WHERE project_id = ?";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, projectId);
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData meta = rs.getMetaData();
 
-//     public Project loadProject(int projectId) {
-//         Project project = new Project("Loaded Project");
-//         Map<Integer, Task> taskMap = new HashMap<>();
-//         Map<String, Resource> resourceMap = new HashMap<>();
+            while (rs.next()) {
+                Hashtable<String, String> circuit = new Hashtable<>();
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    circuit.put(meta.getColumnName(i), rs.getString(i));
+                }
+                circuits.add(circuit);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return circuits;
+    }
 
-//         try (Connection conn = DatabaseUtil.getConnection()) {
-//             String sqlTasks = "SELECT * FROM task WHERE project_id = ? ORDER BY task_id";
-//             try (PreparedStatement stmt = conn.prepareStatement(sqlTasks)) {
-//                 stmt.setInt(1, projectId);
-//                 ResultSet rs = stmt.executeQuery();
-//                 while (rs.next()) {
-//                     int id = rs.getInt("task_id");
-//                     String title = rs.getString("title");
-//                     Timestamp start = rs.getTimestamp("start_time");
-//                     Timestamp end = rs.getTimestamp("end_time");
+    // ====== GATE-SPECIFIC METHODS ======
 
-//                     Task task = new Task(id, title, start.toLocalDateTime(), end.toLocalDateTime());
-//                     project.addTask(task);
-//                     taskMap.put(id, task);
-//                 }
-//             }
-//             String sqlDeps = "SELECT * FROM task_dependency";
-//             try (Statement stmt = conn.createStatement();
-//                     ResultSet rs = stmt.executeQuery(sqlDeps)) {
-//                 while (rs.next()) {
-//                     int taskId = rs.getInt("task_id");
-//                     int dependsOnId = rs.getInt("depends_on_id");
-//                     Task task = taskMap.get(taskId);
-//                     Task dep = taskMap.get(dependsOnId);
-//                     if (task != null && dep != null) {
-//                         task.addDependency(dep);
-//                     }
-//                 }
-//             }
-//             String sqlRes = "SELECT * FROM resource WHERE project_id = ?";
-//             try (PreparedStatement stmt = conn.prepareStatement(sqlRes)) {
-//                 stmt.setInt(1, projectId);
-//                 ResultSet rs = stmt.executeQuery();
-//                 while (rs.next()) {
-//                     String name = rs.getString("name");
-//                     Resource res = new Resource(name);
-//                     resourceMap.put(name, res);
-//                     project.addResource(res);
-//                 }
-//             }
+    public boolean saveGate(Hashtable<String, String> data) {
+        String sql = "INSERT INTO gates (circuit_id, type, label, x_pos, y_pos, rotation, color, num_inputs) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, Integer.parseInt(data.get("circuit_id")));
+            stmt.setString(2, data.get("type"));
+            stmt.setString(3, data.getOrDefault("label", ""));
+            stmt.setInt(4, Integer.parseInt(data.get("x_pos")));
+            stmt.setInt(5, Integer.parseInt(data.get("y_pos")));
+            stmt.setInt(6, Integer.parseInt(data.getOrDefault("rotation", "0")));
+            stmt.setString(7, data.getOrDefault("color", "black"));
+            stmt.setInt(8, Integer.parseInt(data.get("num_inputs")));
+            stmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
-//             String sqlAlloc = """
-//                         SELECT * FROM allocation
-//                         WHERE task_id IN (SELECT task_id FROM task WHERE project_id = ?)
-//                     """;
-//             try (PreparedStatement stmt = conn.prepareStatement(sqlAlloc)) {
-//                 stmt.setInt(1, projectId);
-//                 ResultSet rs = stmt.executeQuery();
-//                 while (rs.next()) {
-//                     int taskId = rs.getInt("task_id");
-//                     String resName = rs.getString("resource_name");
-//                     int percent = rs.getInt("percentage");
+    public ArrayList<Hashtable<String, String>> loadGatesByCircuit(int circuitId) {
+        return loadByForeignKey("gates", "circuit_id", circuitId);
+    }
 
-//                     Task task = taskMap.get(taskId);
-//                     Resource res = resourceMap.get(resName);
-//                     if (task != null && res != null) {
-//                         Allocation alloc = new Allocation(res, task, percent);
-//                         res.addAllocation(alloc);
-//                         task.addAllocation(alloc);
-//                     }
-//                 }
-//             }
+    // ====== GENERIC HELPER FOR FOREIGN KEY LOADING ======
 
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//         }
-
-//         return project;
-//     }
-
-//     public boolean updateTask(Hashtable<String, String> data) {
-//         String sql = """
-//                     UPDATE task SET title = ?, start_time = ?, end_time = ? WHERE task_id = ?
-//                 """;
-
-//         try (Connection conn = DatabaseUtil.getConnection();
-//                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-//             String startStr = data.get("start").trim().replace("T", " ");
-//             String endStr = data.get("end").trim().replace("T", " ");
-//             if (startStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}$"))
-//                 startStr += ":00";
-//             if (endStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}$"))
-//                 endStr += ":00";
-//             stmt.setString(1, data.get("title"));
-//             stmt.setTimestamp(2, Timestamp.valueOf(startStr));
-//             stmt.setTimestamp(3, Timestamp.valueOf(endStr));
-//             stmt.setInt(4, Integer.parseInt(data.get("task_id")));
-
-//             stmt.executeUpdate();
-//             return true;
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//             return false;
-//         }
-//     }
-
-//     public void deleteDependenciesForTask(String taskId) {
-//         String sql = "DELETE FROM task_dependency WHERE task_id = ?";
-//         try (Connection conn = DatabaseUtil.getConnection();
-//                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-//             stmt.setInt(1, Integer.parseInt(taskId));
-//             stmt.executeUpdate();
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//         }
-//     }
-
-//     public void addTaskDependency(int taskId, int dependsOnId) {
-//         String sql = "INSERT INTO task_dependency (task_id, depends_on_id) VALUES (?, ?) ON CONFLICT DO NOTHING";
-//         try (Connection conn = DatabaseUtil.getConnection();
-//                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-//             stmt.setInt(1, taskId);
-//             stmt.setInt(2, dependsOnId);
-//             stmt.executeUpdate();
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//         }
-//     }
-
-//     public void deleteProjectTasks(int projectId) {
-//         String deleteAllocations = """
-//                     DELETE FROM allocation WHERE task_id IN (SELECT id FROM task WHERE project_id = ?)
-//                 """;
-
-//         String deleteDependencies = """
-//                     DELETE FROM task_dependency WHERE task_id IN (SELECT id FROM task WHERE project_id = ?)
-//                     OR depends_on_id IN (SELECT id FROM task WHERE project_id = ?)
-//                 """;
-
-//         String deleteTasks = "DELETE FROM task WHERE project_id = ?";
-//         try (Connection conn = DatabaseUtil.getConnection()) {
-//             conn.setAutoCommit(false);
-//             try (PreparedStatement ps1 = conn.prepareStatement(deleteAllocations);
-//                     PreparedStatement ps2 = conn.prepareStatement(deleteDependencies);
-//                     PreparedStatement ps3 = conn.prepareStatement(deleteTasks)) {
-
-//                 ps1.setInt(1, projectId);
-//                 ps2.setInt(1, projectId);
-//                 ps2.setInt(2, projectId);
-//                 ps3.setInt(1, projectId);
-
-//                 ps1.executeUpdate();
-//                 ps2.executeUpdate();
-//                 ps3.executeUpdate();
-
-//                 conn.commit();
-//             } catch (SQLException ex) {
-//                 conn.rollback();
-//                 throw ex;
-//             }
-//         } catch (SQLException e) {
-//             e.printStackTrace();
-//             JOptionPane.showMessageDialog(null, "Error deleting project tasks: " + e.getMessage());
-//         }
-//     }
-
-//     public void addAllocation(int taskId, int resourceId, int percentage) {
-//         String sql = """
-//                     INSERT INTO allocation (task_id, resource_id, percentage)
-//                     VALUES (?, ?, ?)
-//                     ON CONFLICT DO NOTHING
-//                 """;
-//         try (Connection conn = DatabaseUtil.getConnection();
-//                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-//             stmt.setInt(1, taskId);
-//             stmt.setInt(2, resourceId);
-//             stmt.setInt(3, percentage);
-//             stmt.executeUpdate();
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//         }
-//     }
-
-//     public void deleteAllocationsForTask(String taskId) {
-//         String sql = "DELETE FROM allocation WHERE task_id = ?";
-//         try (Connection conn = DatabaseUtil.getConnection();
-//                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-//             stmt.setInt(1, Integer.parseInt(taskId));
-//             stmt.executeUpdate();
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//         }
-//     }
-
-//     public int getOrCreateResourceId(String name, int projectId) {
-//         String selectSql = "SELECT resource_id FROM resource WHERE name = ? AND project_id = ?";
-//         String insertSql = "INSERT INTO resource (project_id, name) VALUES (?, ?) RETURNING resource_id";
-
-//         try (Connection conn = DatabaseUtil.getConnection()) {
-//             // try to find existing resource
-//             try (PreparedStatement stmt = conn.prepareStatement(selectSql)) {
-//                 stmt.setString(1, name);
-//                 stmt.setInt(2, projectId);
-//                 ResultSet rs = stmt.executeQuery();
-//                 if (rs.next())
-//                     return rs.getInt("resource_id");
-//             }
-
-//             // otherwise insert
-//             try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
-//                 stmt.setInt(1, projectId);
-//                 stmt.setString(2, name);
-//                 ResultSet rs = stmt.executeQuery();
-//                 if (rs.next())
-//                     return rs.getInt("resource_id");
-//             }
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//         }
-//         return -1; // failed
-//     }
-
-// }
+    private ArrayList<Hashtable<String, String>> loadByForeignKey(String table, String keyColumn, int keyValue) {
+        ArrayList<Hashtable<String, String>> list = new ArrayList<>();
+        String sql = "SELECT * FROM " + table + " WHERE " + keyColumn + " = ?";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, keyValue);
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData meta = rs.getMetaData();
+            while (rs.next()) {
+                Hashtable<String, String> row = new Hashtable<>();
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    row.put(meta.getColumnName(i), rs.getString(i));
+                }
+                list.add(row);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+}

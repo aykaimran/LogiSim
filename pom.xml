@@ -9,4 +9,5 @@
         <maven.compiler.release>24</maven.compiler.release>
         <exec.mainClass>org.yourcompany.yourproject.Logi_Sim</exec.mainClass>
     </properties>
+
 </project>

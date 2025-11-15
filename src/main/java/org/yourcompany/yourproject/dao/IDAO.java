@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 
 public interface IDAO {
-    public boolean save(Hashtable<String, String> data);
+    public int save(Hashtable<String, String> data);
     public boolean delete(String id);
     public Hashtable<String, String> load(String id);
     public ArrayList<Hashtable<String, String>> load();

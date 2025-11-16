@@ -1,0 +1,15 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package org.yourcompany.yourproject.businessLayer.analysis;
+
+/**
+ *
+ * @author Tabs
+ */
+public class TruthTableGenerator {
+    public TruthTableGenerator() {
+        // Logic to generate truth table will go here
+    }
+}

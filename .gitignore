@@ -1,2 +1,3 @@
 # Ignore DatabaseUtil.java file
 **/DatabaseUtil.java
+target/

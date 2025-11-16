@@ -1,4 +1,4 @@
-package org.yourcompany.yourproject.dao;
+package org.yourcompany.yourproject.dataAccessLayer.dao;
 
 import java.util.ArrayList;
 import java.util.Hashtable;

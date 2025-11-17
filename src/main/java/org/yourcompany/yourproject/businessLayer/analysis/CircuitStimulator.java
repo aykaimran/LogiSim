@@ -7,7 +7,7 @@ package org.yourcompany.yourproject.businessLayer.analysis;
 import org.yourcompany.yourproject.businessLayer.components.*;
 import org.yourcompany.yourproject.businessLayer.components.gates.*;
 import java.util.HashMap;
-import java.util.Map
+import java.util.Map;
 import java.util.List;
 public class CircuitStimulator {
 

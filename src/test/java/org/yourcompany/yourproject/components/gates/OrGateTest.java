@@ -1,23 +1,21 @@
-
 package org.yourcompany.yourproject.components.gates;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.awt.Point;
+
+import org.yourcompany.yourproject.businessLayer.components.gates.OrGate;
 import org.yourcompany.yourproject.businessLayer.components.ComponentBase;
-import org.yourcompany.yourproject.businessLayer.components.gates.AndGate;
 
-class AndGateTest {
+class OrGateTest {
 
-    private AndGate gate;
+    private OrGate gate;
 
     @BeforeEach
     void setUp() {
-        gate = new AndGate();
+        gate = new OrGate();
     }
 
     @Test
@@ -28,38 +26,43 @@ class AndGateTest {
 
     @Test
     void testComputeOutput() {
-        // Set inputs and evaluate
+        // Test all input combinations
+        gate.setInputValue(0, false);
+        gate.setInputValue(1, false);
+        gate.computeOutput();
+        assertFalse(gate.getOutput());
+
         gate.setInputValue(0, true);
-        gate.setInputValue(1, true);
-        gate.evaluate();
+        gate.setInputValue(1, false);
+        gate.computeOutput();
         assertTrue(gate.getOutput());
 
         gate.setInputValue(0, false);
-        gate.evaluate();
-        assertFalse(gate.getOutput());
+        gate.setInputValue(1, true);
+        gate.computeOutput();
+        assertTrue(gate.getOutput());
 
-        gate.setInputValue(1, false);
         gate.setInputValue(0, true);
-        gate.evaluate();
-        assertFalse(gate.getOutput());
+        gate.setInputValue(1, true);
+        gate.computeOutput();
+        assertTrue(gate.getOutput());
     }
 
     @Test
     void testUpdateMethod() {
-        // Test update method directly
-        gate.setInputValueDirect(0, true);
-        gate.setInputValueDirect(1, true);
+        gate.setInputValue(0, false);
+        gate.setInputValue(1, true);
         gate.update();
         assertTrue(gate.getOutput());
 
-        gate.setInputValueDirect(0, true);
-        gate.setInputValueDirect(1, false);
+        gate.setInputValue(0, false);
+        gate.setInputValue(1, false);
         gate.update();
         assertFalse(gate.getOutput());
     }
 
     @Test
-    void testCopy() {
+    void testCopyMethod() {
         gate.setPosition(50, 100);
         gate.setInputValue(0, true);
         gate.setInputValue(1, false);
@@ -69,16 +72,15 @@ class AndGateTest {
         assertEquals(gate.getPosition(), copy.getPosition());
         assertEquals(gate.getInputs(), copy.getInputs());
         assertEquals(gate.getOutputs(), copy.getOutputs());
-        assertNotEquals(gate.getName(), copy.getName()); // Name should be different (_Copy)
+        assertNotEquals(gate.getName(), copy.getName()); // Name should have "_Copy"
     }
 
     @Test
     void testConstructorWithOtherGate() {
-        // Create a gate with set inputs
         gate.setInputValue(0, true);
         gate.setInputValue(1, false);
 
-        AndGate clonedGate = new AndGate(gate);
+        OrGate clonedGate = new OrGate(gate);
         assertEquals(gate.getName(), clonedGate.getName());
         assertEquals(gate.getInputs(), clonedGate.getInputs());
         assertEquals(gate.getOutputs(), clonedGate.getOutputs());
@@ -87,16 +89,15 @@ class AndGateTest {
     }
 
     @Test
-    void testEvaluateWithSingleInput() {
-        // For AND gate with only 1 input (simulate edge case)
-        AndGate singleInputGate = new AndGate() {
-            @Override
-            public int getInputs() {
-                return 1;
-            }
-        };
-        singleInputGate.setInputValue(0, true);
-        singleInputGate.evaluate();
-        assertFalse(singleInputGate.getOutput());
+    void testEvaluateMethod() {
+        gate.setInputValue(0, false);
+        gate.setInputValue(1, true);
+        gate.evaluate();
+        assertTrue(gate.getOutput());
+
+        gate.setInputValue(0, false);
+        gate.setInputValue(1, false);
+        gate.evaluate();
+        assertFalse(gate.getOutput());
     }
 }

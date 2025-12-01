@@ -2,86 +2,448 @@ package org.yourcompany.yourproject.businessLayer.service;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 
 import org.yourcompany.yourproject.dataAccessLayer.dao.DBDAO;
 
 public class ProjectService {
-    private final DBDAO db = new DBDAO();
 
-    // Save a project and return its ID
-    public int saveProject(String name, String description) {
+    public final DBDAO db = new DBDAO();
+
+    // Save a project and return true if successful
+    public boolean saveProject(String name) {
+        System.out.println("=== DEBUG ProjectService.saveProject ===");
+        System.out.println("Name: " + name);
+        
         Hashtable<String, String> project = new Hashtable<>();
         project.put("table", "projects");
         project.put("name", name);
-        project.put("description", description);
-        return db.save(project);
+
+        System.out.println("Calling DBDAO.save with data: " + project);
+        int id = db.save(project);
+        System.out.println("DBDAO.save returned ID: " + id);
+        
+        boolean success = id > 0;
+        System.out.println("Save operation result: " + success);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return success;
     }
 
-    // Add a circuit and return its ID
-    public int addCircuit(int projectId, String name, Integer parentCircuitId) {
+    // Add a circuit and return true if successful
+    public boolean addCircuit(int projectId, String name) {
+        System.out.println("=== DEBUG ProjectService.addCircuit ===");
+        System.out.println("ProjectID: " + projectId + ", Name: " + name);
+        
         Hashtable<String, String> circuit = new Hashtable<>();
         circuit.put("table", "circuits");
         circuit.put("project_id", String.valueOf(projectId));
-        if (parentCircuitId != null)
-            circuit.put("parent_circuit_id", String.valueOf(parentCircuitId));
         circuit.put("name", name);
-        return db.save(circuit);
+
+        System.out.println("Calling DBDAO.save with data: " + circuit);
+        int id = db.save(circuit);
+        System.out.println("DBDAO.save returned ID: " + id);
+        
+        boolean success = id > 0;
+        System.out.println("Add circuit result: " + success);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return success;
     }
 
-    // Add a gate and return its ID
-    public int addGate(int circuitId, String type, String label, int x, int y, int numInputs, String color) {
-        Hashtable<String, String> gate = new Hashtable<>();
-        gate.put("table", "gates");
-        gate.put("circuit_id", String.valueOf(circuitId));
-        gate.put("type", type);
-        gate.put("label", label);
-        gate.put("x_pos", String.valueOf(x));
-        gate.put("y_pos", String.valueOf(y));
-        gate.put("num_inputs", String.valueOf(numInputs));
-        gate.put("color", color);
-        return db.save(gate);
+    // Add a component and return true if successful
+    public boolean addComponent(int circuitId, String name, String type, int inputs, int outputs, 
+                               int positionX, int positionY, String componentId) {
+        System.out.println("=== DEBUG ProjectService.addComponent ===");
+        System.out.println("CircuitID: " + circuitId + ", Name: " + name + ", Type: " + type);
+        System.out.println("Inputs: " + inputs + ", Outputs: " + outputs);
+        System.out.println("Position: (" + positionX + "," + positionY + "), ComponentID: " + componentId);
+        
+        Hashtable<String, String> component = new Hashtable<>();
+        component.put("table", "components");
+        component.put("circuit_id", String.valueOf(circuitId));
+        component.put("name", name);
+        component.put("type", type);
+        component.put("inputs", String.valueOf(inputs));
+        component.put("outputs", String.valueOf(outputs));
+        component.put("position_x", String.valueOf(positionX));
+        component.put("position_y", String.valueOf(positionY));
+        component.put("id", componentId);
+
+        System.out.println("Calling DBDAO.save with data: " + component);
+        int id = db.save(component);
+        System.out.println("DBDAO.save returned ID: " + id);
+        
+        boolean success = id > 0;
+        System.out.println("Add component result: " + success);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return success;
     }
 
-    // Add a pin and return its ID
-    public int addPin(int gateId, String type, int number) {
-        Hashtable<String, String> pin = new Hashtable<>();
-        pin.put("table", "pins");
-        pin.put("gate_id", String.valueOf(gateId));
-        pin.put("pin_type", type);
-        pin.put("pin_number", String.valueOf(number));
-        return db.save(pin);
+    // Add a connector and return true if successful
+    public boolean addConnector(int circuitId, String name, String color, Integer fromComponentId, 
+                               int fromPort, Integer toComponentId, int toPort, 
+                               boolean signalValue, String connectorId) {
+        System.out.println("=== DEBUG ProjectService.addConnector ===");
+        System.out.println("CircuitID: " + circuitId + ", Name: " + name + ", Color: " + color);
+        System.out.println("From Component: " + fromComponentId + " Port: " + fromPort);
+        System.out.println("To Component: " + toComponentId + " Port: " + toPort);
+        System.out.println("Signal Value: " + signalValue + ", ConnectorID: " + connectorId);
+        
+        Hashtable<String, String> connector = new Hashtable<>();
+        connector.put("table", "connectors");
+        connector.put("circuit_id", String.valueOf(circuitId));
+        connector.put("name", name);
+        connector.put("color", color);
+        if (fromComponentId != null)
+            connector.put("from_component_id", String.valueOf(fromComponentId));
+        connector.put("from_port", String.valueOf(fromPort));
+        if (toComponentId != null)
+            connector.put("to_component_id", String.valueOf(toComponentId));
+        connector.put("to_port", String.valueOf(toPort));
+        connector.put("signal_value", String.valueOf(signalValue));
+        connector.put("id", connectorId);
+
+        System.out.println("Calling DBDAO.save with data: " + connector);
+        int id = db.save(connector);
+        System.out.println("DBDAO.save returned ID: " + id);
+        
+        boolean success = id > 0;
+        System.out.println("Add connector result: " + success);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return success;
     }
 
-    // Add a gate connection and return its ID
-    public int addGateConnection(int fromGate, int fromPin, int toGate, int toPin, String color) {
-        Hashtable<String, String> conn = new Hashtable<>();
-        conn.put("table", "connections");
-        conn.put("from_gate_id", String.valueOf(fromGate));
-        conn.put("from_pin_number", String.valueOf(fromPin));
-        conn.put("to_gate_id", String.valueOf(toGate));
-        conn.put("to_pin_number", String.valueOf(toPin));
-        conn.put("color", color);
-        return db.save(conn);
+    // Add a component value and return true if successful
+    public boolean addComponentValue(int componentId, int portIndex, boolean value, String type) {
+        System.out.println("=== DEBUG ProjectService.addComponentValue ===");
+        System.out.println("ComponentID: " + componentId + ", PortIndex: " + portIndex);
+        System.out.println("Value: " + value + ", Type: " + type);
+        
+        Hashtable<String, String> componentValue = new Hashtable<>();
+        componentValue.put("table", "component_values");
+        componentValue.put("component_id", String.valueOf(componentId));
+        componentValue.put("port_index", String.valueOf(portIndex));
+        componentValue.put("value", String.valueOf(value));
+        componentValue.put("type", type);
+
+        System.out.println("Calling DBDAO.save with data: " + componentValue);
+        int id = db.save(componentValue);
+        System.out.println("DBDAO.save returned ID: " + id);
+        
+        boolean success = id > 0;
+        System.out.println("Add component value result: " + success);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return success;
     }
 
-    // Load a project with circuits count
+    // Load circuits by project
+    public ArrayList<Hashtable<String, String>> loadCircuitsByProject(int projectId) {
+        System.out.println("=== DEBUG ProjectService.loadCircuitsByProject ===");
+        System.out.println("ProjectID: " + projectId);
+        
+        ArrayList<Hashtable<String, String>> result = db.loadCircuitsByProject(projectId);
+        
+        System.out.println("Found " + result.size() + " circuits");
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println("Circuit " + i + ": " + result.get(i));
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    // Load components by circuit - USING GENERIC METHOD SINCE DBDAO DOESN'T HAVE SPECIFIC ONE
+    public ArrayList<Hashtable<String, String>> loadComponentsByCircuit(int circuitId) {
+        System.out.println("=== DEBUG ProjectService.loadComponentsByCircuit ===");
+        System.out.println("CircuitID: " + circuitId);
+        
+        ArrayList<Hashtable<String, String>> result = db.loadByForeignKey("components", "circuit_id", circuitId);
+        
+        System.out.println("Found " + result.size() + " components");
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println("Component " + i + ": " + result.get(i));
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    // Load connectors by circuit - USING GENERIC METHOD SINCE DBDAO DOESN'T HAVE SPECIFIC ONE
+    public ArrayList<Hashtable<String, String>> loadConnectorsByCircuit(int circuitId) {
+        System.out.println("=== DEBUG ProjectService.loadConnectorsByCircuit ===");
+        System.out.println("CircuitID: " + circuitId);
+        
+        ArrayList<Hashtable<String, String>> result = db.loadByForeignKey("connectors", "circuit_id", circuitId);
+        
+        System.out.println("Found " + result.size() + " connectors");
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println("Connector " + i + ": " + result.get(i));
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    // Load component values by component - USING GENERIC METHOD SINCE DBDAO DOESN'T HAVE SPECIFIC ONE
+    public ArrayList<Hashtable<String, String>> loadComponentValuesByComponent(int componentId) {
+        System.out.println("=== DEBUG ProjectService.loadComponentValuesByComponent ===");
+        System.out.println("ComponentID: " + componentId);
+        
+        ArrayList<Hashtable<String, String>> result = db.loadByForeignKey("component_values", "component_id", componentId);
+        
+        System.out.println("Found " + result.size() + " component values");
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println("Component Value " + i + ": " + result.get(i));
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    // Load a project with its circuits
     public Hashtable<String, String> loadProject(int projectId) {
-        Hashtable<String, String> project = db.load("projects:" + projectId);
-        if (project == null) return null;
-
+        System.out.println("=== DEBUG ProjectService.loadProject ===");
+        System.out.println("Loading project ID: " + projectId);
+        
+        String projectKey = "projects:" + projectId;
+        System.out.println("Calling DBDAO.load with key: " + projectKey);
+        
+        Hashtable<String, String> project = db.load(projectKey);
+        
+        if (project == null) {
+            System.out.println("Project not found!");
+            System.out.println("=== END DEBUG ===\n");
+            return null;
+        }
+        
+        System.out.println("Project loaded: " + project);
+        
         ArrayList<Hashtable<String, String>> circuits = db.loadCircuitsByProject(projectId);
         project.put("CircuitsCount", String.valueOf(circuits.size()));
+        
+        System.out.println("Added CircuitsCount: " + circuits.size());
+        System.out.println("Final project data: " + project);
+        System.out.println("=== END DEBUG ===\n");
+        
         return project;
     }
 
+    // Generic foreign key loader
+    public List<Hashtable<String, String>> loadByForeignKey(String table, String column, int value) {
+        System.out.println("=== DEBUG ProjectService.loadByForeignKey ===");
+        System.out.println("Table: " + table + ", Column: " + column + ", Value: " + value);
+        
+        List<Hashtable<String, String>> result = db.loadByForeignKey(table, column, value);
+        
+        System.out.println("Found " + result.size() + " records");
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println("Record " + i + ": " + result.get(i));
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    // Load a single entity by ID
+    public Hashtable<String, String> load(String table, int id) {
+        System.out.println("=== DEBUG ProjectService.load ===");
+        System.out.println("Table: " + table + ", ID: " + id);
+        
+        String key = table + ":" + id;
+        System.out.println("Calling DBDAO.load with key: " + key);
+        
+        Hashtable<String, String> result = db.load(key);
+        
+        if (result == null) {
+            System.out.println("Record not found!");
+        } else {
+            System.out.println("Record loaded: " + result);
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    // Load all entities from a table
+    public ArrayList<Hashtable<String, String>> loadAll(String table) {
+        System.out.println("=== DEBUG ProjectService.loadAll ===");
+        System.out.println("Table: " + table);
+        
+        ArrayList<Hashtable<String, String>> result = db.loadAll(table);
+        
+        System.out.println("Found " + result.size() + " records");
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println("Record " + i + ": " + result.get(i));
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
     // Delete entities
-    public boolean deleteProject(int projectId) { return db.delete("projects:" + projectId); }
-    public boolean deleteCircuit(int circuitId) { return db.delete("circuits:" + circuitId); }
+    public boolean deleteProject(int projectId) {
+        System.out.println("=== DEBUG ProjectService.deleteProject ===");
+        System.out.println("Deleting project ID: " + projectId);
+        
+        String key = "projects:" + projectId;
+        System.out.println("Calling DBDAO.delete with key: " + key);
+        
+        boolean result = db.delete(key);
+        System.out.println("Delete result: " + result);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    public boolean deleteCircuit(int circuitId) {
+        System.out.println("=== DEBUG ProjectService.deleteCircuit ===");
+        System.out.println("Deleting circuit ID: " + circuitId);
+        
+        String key = "circuits:" + circuitId;
+        System.out.println("Calling DBDAO.delete with key: " + key);
+        
+        boolean result = db.delete(key);
+        System.out.println("Delete result: " + result);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    public boolean deleteComponent(int componentId) {
+        System.out.println("=== DEBUG ProjectService.deleteComponent ===");
+        System.out.println("Deleting component ID: " + componentId);
+        
+        String key = "components:" + componentId;
+        System.out.println("Calling DBDAO.delete with key: " + key);
+        
+        boolean result = db.delete(key);
+        System.out.println("Delete result: " + result);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    public boolean deleteConnector(int connectorId) {
+        System.out.println("=== DEBUG ProjectService.deleteConnector ===");
+        System.out.println("Deleting connector ID: " + connectorId);
+        
+        String key = "connectors:" + connectorId;
+        System.out.println("Calling DBDAO.delete with key: " + key);
+        
+        boolean result = db.delete(key);
+        System.out.println("Delete result: " + result);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
 
     // Get all entities
-    public ArrayList<Hashtable<String, String>> getAllProjects() { return db.loadAll("projects"); }
-    public ArrayList<Hashtable<String, String>> getAllCircuits() { return db.loadAll("circuits"); }
-    public ArrayList<Hashtable<String, String>> getAllGates() { return db.loadAll("gates"); }
-    public ArrayList<Hashtable<String, String>> getAllPins() { return db.loadAll("pins"); }
-    public ArrayList<Hashtable<String, String>> getAllGateConnections() { return db.loadAll("connections"); }
+    public ArrayList<Hashtable<String, String>> getAllProjects() {
+        System.out.println("=== DEBUG ProjectService.getAllProjects ===");
+        
+        ArrayList<Hashtable<String, String>> result = db.loadAll("projects");
+        
+        System.out.println("Found " + result.size() + " projects");
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println("Project " + i + ": " + result.get(i));
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    public ArrayList<Hashtable<String, String>> getAllCircuits() {
+        System.out.println("=== DEBUG ProjectService.getAllCircuits ===");
+        
+        ArrayList<Hashtable<String, String>> result = db.loadAll("circuits");
+        
+        System.out.println("Found " + result.size() + " circuits");
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println("Circuit " + i + ": " + result.get(i));
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    public ArrayList<Hashtable<String, String>> getAllComponents() {
+        System.out.println("=== DEBUG ProjectService.getAllComponents ===");
+        
+        ArrayList<Hashtable<String, String>> result = db.loadAll("components");
+        
+        System.out.println("Found " + result.size() + " components");
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println("Component " + i + ": " + result.get(i));
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    public ArrayList<Hashtable<String, String>> getAllConnectors() {
+        System.out.println("=== DEBUG ProjectService.getAllConnectors ===");
+        
+        ArrayList<Hashtable<String, String>> result = db.loadAll("connectors");
+        
+        System.out.println("Found " + result.size() + " connectors");
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println("Connector " + i + ": " + result.get(i));
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    public ArrayList<Hashtable<String, String>> getAllComponentValues() {
+        System.out.println("=== DEBUG ProjectService.getAllComponentValues ===");
+        
+        ArrayList<Hashtable<String, String>> result = db.loadAll("component_values");
+        
+        System.out.println("Found " + result.size() + " component values");
+        for (int i = 0; i < result.size(); i++) {
+            System.out.println("Component Value " + i + ": " + result.get(i));
+        }
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    // Update methods
+    public boolean updateComponentPosition(int componentId, int positionX, int positionY) {
+        System.out.println("=== DEBUG ProjectService.updateComponentPosition ===");
+        System.out.println("ComponentID: " + componentId + ", New Position: (" + positionX + "," + positionY + ")");
+        
+        boolean result = db.updateComponentPosition(componentId, positionX, positionY);
+        System.out.println("Update result: " + result);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    public boolean updateConnectorSignal(int connectorId, boolean signalValue) {
+        System.out.println("=== DEBUG ProjectService.updateConnectorSignal ===");
+        System.out.println("ConnectorID: " + connectorId + ", Signal Value: " + signalValue);
+        
+        boolean result = db.updateConnectorSignal(connectorId, signalValue);
+        System.out.println("Update result: " + result);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
+
+    public boolean updateComponentValue(int componentId, int portIndex, boolean value, String type) {
+        System.out.println("=== DEBUG ProjectService.updateComponentValue ===");
+        System.out.println("ComponentID: " + componentId + ", PortIndex: " + portIndex);
+        System.out.println("Value: " + value + ", Type: " + type);
+        
+        boolean result = db.updateComponentValue(componentId, portIndex, value, type);
+        System.out.println("Update result: " + result);
+        System.out.println("=== END DEBUG ===\n");
+        
+        return result;
+    }
 }

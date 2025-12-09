@@ -2152,7 +2152,7 @@ public class MainUI extends JFrame {
         return circuit.countCircuitOutputs();
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(MainUI::new);
-    }
+    // public static void main(String[] args) {
+    //     SwingUtilities.invokeLater(MainUI::new);
+    // }
 }

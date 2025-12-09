@@ -19,7 +19,7 @@ A Visual Digital Logic Simulator - Simple, Fast, Modular
 ---
 
 ## 📚 Table of Contents
-- [About](/about)
+- [About](#about)
 - [Prerequisites](#prerequisites)
 - [Build & Run](#build--run)
 - [User Guide](#user-guide)

@@ -1,12 +1,24 @@
+# LogiSim ⚡  
+A Visual Digital Logic Simulator - Simple, Fast, Modular
 
-# LogiSim
-
-LogiSim is a Java-based application designed to simulate and visualize digital logic circuits.  
-It provides an easy-to-use environment for beginners to learn and practice circuits using common components like logic gates, switches, and LEDs.
+![Java](https://img.shields.io/badge/Java-17+-blue)
+![Maven](https://img.shields.io/badge/Maven-3.8+-green)
+![License](https://img.shields.io/badge/License-MIT-orange)
 
 ---
 
-## Table of Contents
+## ✨ Features
+- Create projects with multiple circuits
+- Use subcircuits for modular design
+- Drag-and-drop components (logic gates, switches, LEDs)
+- Connect components using wires
+- Real-time simulation
+- Automatic truth table generation
+- Export circuits as PNG/JPEG
+
+---
+
+## 📚 Table of Contents
 - [About](#about)
 - [Prerequisites](#prerequisites)
 - [Build & Run](#build--run)
@@ -14,62 +26,59 @@ It provides an easy-to-use environment for beginners to learn and practice circu
 - [Architecture & Design](#architecture--design)
 - [API Documentation](#api-documentation)
 - [Changelog](#changelog)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-## API Documentation
-Javadoc for all classes and methods is generated automatically. Open in your browser:  
-[target/site/apidocs/index.html](target/site/apidocs/index.html)
-
-
-## About
-LogiSim allows users to:
-- Create projects and multiple circuits
-- Reuse circuits as subcircuits
-- Connect components using wires
-- Run simulations and generate truth tables
-- Export circuit diagrams as PNG/JPEG
+- [Contributors](#contributors)
 
 ---
 
-## Prerequisites
-- Java 17+  
-- Maven 3.8+  
-- NetBeans (optional, for IDE use)
+## 🔍 About
+LogiSim is a Java-based logic circuit simulator that helps users learn and visualize how digital electronics work.  
+It provides an interactive canvas, reusable circuit modules, and a project-based workflow.
 
 ---
 
-## Build & Run
+## 🛠 Prerequisites
+- Java 17+
+- Maven 3.8+
+- Optional IDE: NetBeans, IntelliJ, or Eclipse
+
+---
+
+## 🚀 Build & Run
 
 ### Using Maven
 ```bash
 mvn clean package
 java -jar target/LogiSim.jar
+```
+---
 
-## **User Guide**
-
-```markdown
-## User Guide
-Detailed instructions on using LogiSim can be found here:  
+## 📘 User Guide
+Detailed instructions on using LogiSim:
 [User Guide](docs/USER_GUIDE.md)
 
+---
 
-## Architecture & Design
-System architecture, class diagrams, and design patterns are described here:  
+## 🧱 Architecture & Design
+System architecture, class diagrams, and design patterns:
 [Architecture & Design](docs/ARCHITECTURE.md)
 
-## API Documentation
-Javadoc for all classes and methods is generated automatically. Open in your browser:  
-[target/site/apidocs/index.html](target/site/apidocs/index.html)
+---
 
-## Changelog
-See version history and updates:  
+## 📄 API Documentation
+
+Javadoc for all classes and methods:
+[API Docs](target/site/apidocs/index.html)
+
+---
+
+## 📝 Changelog
+Version history and updates:
 [Changelog](docs/CHANGELOG.md)
 
-## Contributing
-Guidelines for contributing to LogiSim:  
-[Contributing](docs/CONTRIBUTING.md)
+---
 
-## License
-Specify your license here (e.g., MIT, Apache 2.0)
+## 👥 Contributors
+- Ayka Imran — [GitHub Profile](https://github.com/aykaimran)
+- Maryam Irshad — [GitHub Profile](https://github.com/maryamirshad04)
+- Tayyaba Fatima — [GitHub Profile](https://github.com/tayyabafatima08)
+

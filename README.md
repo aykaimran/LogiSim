@@ -6,6 +6,11 @@ A Visual Digital Logic Simulator - Simple, Fast, Modular
 ![License](https://img.shields.io/badge/License-MIT-orange)
 
 ---
+## 🎬 Demo
+
+[![LogiSim Demo](assets/demo-thumbnail.png)](assets/demo.mp4)
+
+---
 
 ## ✨ Features
 - Create projects with multiple circuits

@@ -8,7 +8,7 @@ A Visual Digital Logic Simulator - Simple, Fast, Modular
 ---
 ## 🎬 Demo
 
-[![LogiSim Demo](assets/demo-thumbnail.png)](assets/demo.mp4)
+[![LogiSim Demo](assets/demo-thumbnail.png)](assets/logisim.mp4)
 
 ---
 
